@@ -68,6 +68,39 @@ holeImage.onload = function () {
 };
 holeImage.src = "images/hole.jpg";  // 50 by 60
 
+var COUNT = 300;  // for snow   from web article   https://php.quicoto.com/snow-html-canvas/
+var Snowflake = function () {  // constructor for snowflakes
+  this.x = 0;
+  this.y = 0;
+  this.vy = 0;
+  this.vx = 0;
+  this.r = 0;
+
+  this.reset();
+}
+// You can set up the 
+Snowflake.prototype.reset = function () {
+  this.x = Math.random() * canvas.width;
+  this.y = Math.random() * -canvas.height;
+
+  // More speed? Change this
+  this.vy = 1 + Math.random() * 3;
+  this.vx = 0.5 - Math.random();
+
+  // Bigger snow?
+  this.r = 1 + Math.random() * 2;
+
+  this.o = 0.5 + Math.random() * 0.5;
+}
+
+var snowflakes = [],  // build an array of snowflakes 
+  snowflake;
+for (i = 0; i < COUNT; i++) {
+  snowflake = new Snowflake();
+  snowflake.reset();
+  snowflakes.push(snowflake);
+}
+
 
 // Create the game objects
 var hero = {
@@ -275,6 +308,23 @@ var counter = function () {
 setInterval(counter, 1000);  // see explanation below, only being used to count down the game seconds
 // The main game loop
 var main = function () {
+  // snow code
+  for (i = 0; i < COUNT; i++) {
+    snowflake = snowflakes[i];
+    snowflake.y += snowflake.vy;
+    snowflake.x += snowflake.vx;
+
+    ctx.globalAlpha = snowflake.o;
+    ctx.beginPath();
+    ctx.arc(snowflake.x, snowflake.y, snowflake.r, 0, Math.PI * 2, false);
+    ctx.closePath();
+    ctx.fill();
+
+    if (snowflake.y > canvas.height) {
+      snowflake.reset();
+    }
+  } 
+  // end of snow code
   update(0.02); // check state of keys and for collisions, pass in a modifier  which "scales" the speed based on how
   // fast the requestAnimationFrame is cycling (fast or slow browser)
   render();   // redraw everything
