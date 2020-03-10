@@ -20,13 +20,14 @@ canvas.height = 800;
 document.body.appendChild(canvas); // inject this new element intot the DOM
 
 // load sound
-var snd = new Audio("whack.wav"); // buffers automatically when created,  http://soundbible.com/tags-short.html
+var snd1 = new Audio("whack.wav"); // buffers automatically when created,  http://soundbible.com/tags-short.html
+var snd2 = new Audio("DyingRobot.wav"); // buffers automatically when created,  http://soundbible.com/tags-short.html
 
 // load images, use the onload event so we can later wait for images to be there
 // Load the background image
 var bgReady = false;
 var bgImage = new Image();
-bgImage.onload = function () { 
+bgImage.onload = function () {
   // show the background image
   bgReady = true;
 };
@@ -58,12 +59,24 @@ treeImage.onload = function () {
 };
 treeImage.src = "images/trees2.jpg";  // 50 by 60
 
+// Load the hole image
+var holeReady = false;
+var holeImage = new Image();
+holeImage.onload = function () {
+  // show the treee image
+  holeReady = true;
+};
+holeImage.src = "images/hole.jpg";  // 50 by 60
+
 
 // Create the game objects
 var hero = {
   speed: 256 // movement speed of hero in pixels per second
 };
 var monster = {};  // empty object, we'll add stuff later
+var hole1 = {};
+var hole2 = {};
+var hole3 = {};
 var monstersCaught = 0;
 
 // Handle keyboard controls
@@ -80,28 +93,80 @@ addEventListener("keyup", function (key) {
 // mistake entering the information.
 
 // Define a function to reset the player and monster positions when player catches a monster
-var reset = function () {
+var reset = function () {  // board is 800 x 800
+  usedXLocations = [];
+  usedYLocations = [];
   // Reset player's position to centre of canvas
-  hero.x = canvas.width / 2;
-  hero.y = canvas.height / 2;
-  // Place the monster somewhere on the canvas randomly
+  hero.x = 400 - 32;
+  hero.y = 400 - 32;
+  usedXLocations.push(hero.x);
+  usedYLocations.push(hero.y);
+  // Place the monster somewhere on the canvas randomly old code
   // monster.x = 32 + (Math.random() * (canvas.width - 64));
   // monster.y = 32 + (Math.random() * (canvas.height - 64));
-  monster.x = (50) + (Math.random() * (canvas.width - 228)); //account for tree  (64 + 50) * 2
-  monster.y = (50) + (Math.random() * (canvas.height - 228));
+  monster.x = placeX();
+  monster.y = placeY();
+  usedXLocations.push(monster.x);
+  usedYLocations.push(monster.y);
+  hole1.x = placeX();
+  hole1.y = placeY();
+  usedXLocations.push(hole1.x);
+  usedYLocations.push(hole1.y);
+  hole2.x = placeX();
+  hole2.y = placeY();
+  usedXLocations.push(hole2.x);
+  usedYLocations.push(hole2.y);
+  hole3.x = placeX();
+  hole3.y = placeY();
 };
+
+placeX = function () {
+  let newx = 0;
+  ok = false;
+
+  while (ok == false) {
+    newx = (50) + (Math.random() * (canvas.width - 228)); //account for tree  (64 + 50) * 2
+    for (let i = 0; i < usedXLocations.length; i++) {
+      if (newx > (usedXLocations[i] + 64) || newx < usedXLocations[i]-64) {
+        ok = true;
+      }
+      else {
+        ok = false;
+        break;  
+      }
+    }
+  }
+  return newx
+}
+placeY = function () {
+  let newy = 0;
+  ok = false;
+  while (ok == false) {
+    newy = (60) + (Math.random() * (canvas.width - 248)); //account for tree  (64 + 60) * 2
+    for (let i = 0; i < usedYLocations.length; i++) {
+      if (newy > (usedYLocations[i] + 64) || newy < usedYLocations[i]-64) {
+        ok = true;
+      }
+      else {
+        ok = false;
+        break;
+      }
+    }
+  }
+  return newy
+}
 
 var update = function (modifier) {     // modifier parameter modifys the speed  value for character motion
   if (38 in keysDown && hero.y > 60) { // Player is holding up key
     hero.y -= hero.speed * modifier;
   }
-  if (40 in keysDown && hero.y < canvas.height - (64+60)) { // Player is holding down key
+  if (40 in keysDown && hero.y < canvas.height - (64 + 60)) { // Player is holding down key
     hero.y += hero.speed * modifier;
   }
   if (37 in keysDown && hero.x > (50)) { // Player is holding left key
     hero.x -= hero.speed * modifier;
   }
-  if (39 in keysDown && hero.x < canvas.width-(64+50)) { // Player is holding right key
+  if (39 in keysDown && hero.x < canvas.width - (64 + 50)) { // Player is holding right key
     hero.x += hero.speed * modifier;
   }
   // Check if player and monster collider
@@ -111,9 +176,36 @@ var update = function (modifier) {     // modifier parameter modifys the speed  
     && hero.y <= (monster.y + 64)
     && monster.y <= (hero.y + 64)
   ) {
-    snd.play();
+    snd1.play();  // play sound
     ++monstersCaught;  // count up in our score
     reset();  // call that function to move the player and monster
+  }
+  // Check if player falls in hole
+  if (
+    (hero.x <= (hole1.x + 64)  // 32 is lenght and width of the characters
+    && hole1.x <= (hero.x + 64)
+    && hero.y <= (hole1.y + 64)
+      && hole1.y <= (hero.y + 64)) ||
+    (hero.x <= (hole2.x + 64) 
+      && hole2.x <= (hero.x + 64)
+      && hero.y <= (hole2.y + 64)
+      && hole2.y <= (hero.y + 64)) ||
+    (hero.x <= (hole3.x + 64)  
+      && hole3.x <= (hero.x + 64)
+      && hero.y <= (hole3.y + 64)
+      && hole3.y <= (hero.y + 64)) 
+  ) {
+    hero.x = 400 - 32;  // reset the player else we end up in a loop
+    hero.y = 400 - 32;
+    snd2.play();  
+    // stop the timer
+    clearInterval(counter);
+    // set game to finished
+    finished = true;
+    count = 0;
+    // hider monster and hero
+    monsterReady = false;
+    heroReady = false;
   }
 };
 
@@ -128,51 +220,55 @@ var render = function () {
   if (monsterReady) {
     ctx.drawImage(monsterImage, monster.x, monster.y);
   }
+  if (holeReady) {
+    ctx.drawImage(holeImage, hole1.x, hole1.y);
+    ctx.drawImage(holeImage, hole2.x, hole2.y);
+    ctx.drawImage(holeImage, hole3.x, hole3.y);
+  }
+
   if (treeReady) {   // 50 by 60
     let x = 0;
     let y = 0;
-    for (x = 0; x < 799 ; x = x + 50)
-    {
-      ctx.drawImage(treeImage, x, 0); 
-      ctx.drawImage(treeImage, x, 740); 
+    for (x = 0; x < 799; x = x + 50) {
+      ctx.drawImage(treeImage, x, 0);
+      ctx.drawImage(treeImage, x, 740);
     }
     for (y = 0; y < 799; y = y + 60) {
       ctx.drawImage(treeImage, 0, y);
       ctx.drawImage(treeImage, 750, y);
     }
-    
+
   }
   // Display score and time 
   ctx.fillStyle = "rgb(0, 0, 250)";  // white text
   ctx.font = "24px Helvetica";
   ctx.textAlign = "left";
   ctx.textBaseline = "top";
-  ctx.fillText("Fish caught: " + monstersCaught, 20, 20);
-  ctx.fillText("Time: " + count, 20, 50);
+  ctx.fillText("Fish caught: " + monstersCaught, 60, 70);
+  ctx.fillText("Time: " + count, 60, 100);
   // Display game over message when timer finished
-  if(finished==true){
+  if (finished == true) {
     ctx.fillText("Game over!", 200, 220);
   }
-  
+
 };
 
-var count = 300; // how many seconds the game lasts for - default 30
+var count = 60; // how many seconds the game lasts for - default 30
 var finished = false;
-var counter =function(){
-  count=count-1; // countown by 1 every second
+var counter = function () {
+  count = count - 1; // countown by 1 every second
   // when count reaches 0 clear the timer, hide monster and
   // hero and finish the game
-    if (count <= 0)
-    {
-      // stop the timer
-       clearInterval(counter);
-       // set game to finished
-       finished = true;
-       count=0;
-       // hider monster and hero
-       monsterReady=false;
-       heroReady=false;
-    }
+  if (count <= 0) {
+    // stop the timer
+    clearInterval(counter);
+    // set game to finished
+    finished = true;
+    count = 0;
+    // hider monster and hero
+    monsterReady = false;
+    heroReady = false;
+  }
 }
 
 // timer interval is every second (1000ms)
@@ -180,7 +276,7 @@ setInterval(counter, 1000);  // see explanation below, only being used to count 
 // The main game loop
 var main = function () {
   update(0.02); // check state of keys and for collisions, pass in a modifier  which "scales" the speed based on how
-                // fast the requestAnimationFrame is cycling (fast or slow browser)
+  // fast the requestAnimationFrame is cycling (fast or slow browser)
   render();   // redraw everything
   requestAnimationFrame(main);   // Request to do this again ASAP
 };
